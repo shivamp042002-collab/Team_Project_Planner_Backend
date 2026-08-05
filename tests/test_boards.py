@@ -3,6 +3,7 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+import uuid
 
 from exceptions.errors import ConflictError, InvalidStateError, NotFoundError, ValidationError
 from repositories.board_repository import BoardRepository
@@ -35,7 +36,7 @@ class BoardApiTests(unittest.TestCase):
         shutil.rmtree(self._tmp_dir, ignore_errors=True)
 
     def _create_team(self, name="engineering"):
-        admin_id = json.loads(self.user_api.create_user(json.dumps({"name": "admin", "display_name": "Admin"})))["id"]
+        admin_id = json.loads(self.user_api.create_user(json.dumps({"name": f"admin-{uuid.uuid4().hex[:8]}", "display_name": "Admin"})))["id"]
         team_id = json.loads(self.team_api.create_team(
             json.dumps({"name": name, "description": "desc", "admin": admin_id})
         ))["id"]
