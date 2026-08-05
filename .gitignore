@@ -1,0 +1,22 @@
+# Runtime data — persisted app data must not be committed
+db/*.json
+out/*.txt
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Environment / secrets
+.env
+
+# Editor/OS cruft
+.vscode/
+.idea/
+.DS_Store
