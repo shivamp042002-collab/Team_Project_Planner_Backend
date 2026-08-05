@@ -42,4 +42,6 @@ class BoardApi(ProjectBoardBase):
         self._service.update_task_status(task_id=data.get("id"), status=data.get("status"))
 
     def export_board(self, request: str) -> str:
-        raise NotImplementedError("export_board will be implemented in Milestone 6")
+        data = json.loads(request)
+        filename = self._service.export_board(board_id=data.get("id"))
+        return json.dumps({"out_file": filename})

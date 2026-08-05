@@ -7,7 +7,9 @@ from repositories.board_repository import BoardRepository
 from repositories.task_repository import TaskRepository
 from repositories.team_repository import TeamRepository
 from validators.common import validate_max_length, validate_required
+from pathlib import Path
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 NAME_MAX_LENGTH = 64
 DESCRIPTION_MAX_LENGTH = 128
 TITLE_MAX_LENGTH = 64
@@ -15,11 +17,12 @@ TASK_STATUSES = {"OPEN", "IN_PROGRESS", "COMPLETE"}
 
 class BoardService:
     def __init__(self, board_repository: BoardRepository = None, team_repository: TeamRepository = None,
-                 task_repository: TaskRepository = None, user_repository=None):
+                 task_repository: TaskRepository = None, user_repository=None, out_dir: Path = None):
         self._boards = board_repository or BoardRepository()
         self._teams = team_repository or TeamRepository()
         self._tasks = task_repository or TaskRepository()
         self._user_repository = user_repository
+        self._out_dir = out_dir or (PROJECT_ROOT / "out")
 
     def _users(self):
         if self._user_repository is None:
@@ -111,3 +114,42 @@ class BoardService:
             raise NotFoundError(f"No task found with id '{task_id}'")
         validate_choice(status, TASK_STATUSES, "status")
         return self._tasks.update(task_id, {"status": status})
+
+    def export_board(self, board_id: str) -> str:
+        board = self._get_board_or_raise(board_id)
+        tasks = self._tasks.get_tasks_for_board(board_id)
+
+        self._out_dir.mkdir(parents=True, exist_ok=True)
+        filename = f"{board_id}_{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S')}.txt"
+        file_path = self._out_dir / filename
+
+        content = self._render_board(board, tasks)
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+        return filename
+
+    def _render_board(self, board: dict, tasks: list) -> str:
+        lines = [
+            f"BOARD: {board['name']}",
+            f"Status: {board['status']}",
+            f"Description: {board['description']}",
+            f"Created: {board['creation_time']}",
+        ]
+        if board.get("end_time"):
+            lines.append(f"Closed: {board['end_time']}")
+        lines.append("=" * 50)
+
+        for status in ("OPEN", "IN_PROGRESS", "COMPLETE"):
+            group = [t for t in tasks if t["status"] == status]
+            lines.append(f"\n{status} ({len(group)})")
+            lines.append("-" * 30)
+            if not group:
+                lines.append("  (none)")
+            for task in group:
+                assignee = self._users().get_by_id(task["user_id"])
+                assignee_name = assignee["display_name"] if assignee else "Unknown"
+                lines.append(f"  [{task['id'][:8]}] {task['title']} — assigned to {assignee_name}")
+                lines.append(f"      {task['description']}")
+
+        return "\n".join(lines) + "\n"
