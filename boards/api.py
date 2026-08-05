@@ -28,10 +28,18 @@ class BoardApi(ProjectBoardBase):
         return json.dumps(boards)
 
     def add_task(self, request: str) -> str:
-        raise NotImplementedError("add_task will be implemented in Milestone 5")
+        data = json.loads(request)
+        task = self._service.add_task(
+            title=data.get("title"),
+            description=data.get("description"),
+            user_id=data.get("user_id"),
+            board_id=data.get("board_id"),
+        )
+        return json.dumps({"id": task["id"]})
 
     def update_task_status(self, request: str):
-        raise NotImplementedError("update_task_status will be implemented in Milestone 5")
+        data = json.loads(request)
+        self._service.update_task_status(task_id=data.get("id"), status=data.get("status"))
 
     def export_board(self, request: str) -> str:
         raise NotImplementedError("export_board will be implemented in Milestone 6")
