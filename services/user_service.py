@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from exceptions.errors import ConflictError, NotFoundError, ValidationError
+from repositories.team_repository import TeamRepository
 from repositories.user_repository import UserRepository
 from users.models import User
 from validators.common import validate_max_length, validate_required
@@ -10,8 +11,9 @@ DISPLAY_NAME_UPDATE_MAX_LENGTH = 128
 
 
 class UserService:
-    def __init__(self, user_repository: UserRepository = None):
+    def __init__(self, user_repository: UserRepository = None, team_repository: TeamRepository = None):
         self._users = user_repository or UserRepository()
+        self._teams = team_repository or TeamRepository()
 
     def create_user(self, name: str, display_name: str) -> dict:
         validate_required(name, "name")
@@ -57,10 +59,6 @@ class UserService:
         return updated
 
     def get_user_teams(self, user_id: str) -> list:
-        record = self._users.get_by_id(user_id)
-        if record is None:
+        if self._users.get_by_id(user_id) is None:
             raise NotFoundError(f"No user found with id '{user_id}'")
-        raise NotImplementedError(
-            "get_user_teams will be implemented in Milestone 3 "
-            "(requires TeamRepository)"
-        )
+        return self._teams.get_teams_for_user(user_id)
