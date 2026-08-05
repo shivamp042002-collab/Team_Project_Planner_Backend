@@ -1,9 +1,3 @@
-"""
-Tests for repositories.base_repository.BaseRepository.
-
-Each test uses a fresh temporary directory so these tests never touch the
-project's real db/ folder and don't interfere with each other.
-"""
 import json
 import shutil
 import tempfile
@@ -90,10 +84,6 @@ class BaseRepositoryTests(unittest.TestCase):
         self.assertEqual(data, [{"id": "1", "name": "A"}])
 
     def test_repeated_saves_do_not_corrupt_or_lose_data(self):
-        """Simulates repeated writes (as would happen across many API
-        calls) and confirms every previously saved record survives each
-        subsequent save (guarding against the atomic-write path losing
-        data)."""
         for i in range(20):
             self.repo.add({"id": str(i), "name": f"Widget {i}"})
 

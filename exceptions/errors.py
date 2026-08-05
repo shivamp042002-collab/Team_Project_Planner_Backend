@@ -1,13 +1,3 @@
-"""
-Custom exception hierarchy for the project planner application.
-
-All application-raised errors inherit from AppError so calling code can
-catch broadly (`except AppError`) or narrowly (`except NotFoundError`).
-Each exception carries a plain-English `.message` describing what went
-wrong, since there is no HTTP layer to translate errors into status codes.
-"""
-
-
 class AppError(Exception):
     """Base class for all application-specific errors."""
 
