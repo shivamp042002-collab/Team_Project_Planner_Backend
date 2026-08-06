@@ -29,7 +29,7 @@ class TeamApiTests(unittest.TestCase):
         return json.loads(response)["id"]
 
     def _create_team(self, name="engineering", admin=None):
-        admin = admin or self._create_user("admin_user")
+        admin = admin or self._create_user(f"admin_{name}")
         response = self.team_api.create_team(
             json.dumps({"name": name, "description": "desc", "admin": admin})
         )
@@ -127,6 +127,71 @@ class TeamApiTests(unittest.TestCase):
     def test_get_user_teams_nonexistent_user_raises(self):
         with self.assertRaises(NotFoundError):
             self.user_api.get_user_teams(json.dumps({"id": "nonexistent"}))
+
+    # describe_team / update_team
+
+    def test_describe_team_found(self):
+        team_id, admin = self._create_team(name="engineering")
+
+        data = json.loads(self.team_api.describe_team(json.dumps({"id": team_id})))
+
+        self.assertEqual(data["name"], "engineering")
+        self.assertEqual(data["admin"], admin)
+
+    def test_update_team_valid(self):
+        team_id, admin = self._create_team()
+
+        response = self.team_api.update_team(json.dumps({
+            "id": team_id,
+            "team": {"name": "renamed-team", "description": "new desc"},
+        }))
+        data = json.loads(response)
+
+        self.assertEqual(data["name"], "renamed-team")
+        self.assertEqual(data["description"], "new desc")
+
+    def test_update_team_duplicate_name_raises(self):
+        self._create_team(name="team-a")
+        team_b, _ = self._create_team(name="team-b")
+
+        with self.assertRaises(ConflictError):
+            self.team_api.update_team(json.dumps({
+                "id": team_b, "team": {"name": "team-a", "description": "d"},
+            }))
+
+    def test_update_team_invalid_admin_raises(self):
+        team_id, _ = self._create_team()
+
+        with self.assertRaises(ValidationError):
+            self.team_api.update_team(json.dumps({
+                "id": team_id,
+                "team": {"name": "engineering", "description": "d", "admin": "nonexistent"},
+            }))
+
+    def test_update_team_not_found_raises(self):
+        with self.assertRaises(NotFoundError):
+            self.team_api.update_team(json.dumps({
+                "id": "nonexistent", "team": {"name": "x", "description": "d"},
+            }))
+
+    def test_list_team_users_nonexistent_team_raises(self):
+        with self.assertRaises(NotFoundError):
+            self.team_api.list_team_users(json.dumps({"id": "nonexistent"}))
+
+    def test_remove_users_from_team_nonexistent_user_raises(self):
+        team_id, _ = self._create_team()
+        with self.assertRaises(NotFoundError):
+            self.team_api.remove_users_from_team(json.dumps({"id": team_id, "users": ["nonexistent"]}))
+
+    def test_add_users_to_team_duplicate_add_dedups(self):
+        team_id, admin = self._create_team()
+        user2 = self._create_user("bob")
+
+        self.team_api.add_users_to_team(json.dumps({"id": team_id, "users": [user2]}))
+        self.team_api.add_users_to_team(json.dumps({"id": team_id, "users": [user2]}))
+
+        members = json.loads(self.team_api.list_team_users(json.dumps({"id": team_id})))
+        self.assertEqual(len(members), 2)  # admin + bob, not duplicated
 
 
 if __name__ == "__main__":

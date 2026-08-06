@@ -97,6 +97,9 @@ class TeamService:
             raise ValidationError(f"cannot remove more than {MAX_USERS_PER_OPERATION} users in a single call")
         if team["admin"] in user_ids:
             raise ValidationError("cannot remove the team admin; reassign admin via update_team first")
+        for user_id in user_ids:
+            if self._users.get_by_id(user_id) is None:
+                raise NotFoundError(f"No user found with id '{user_id}'")
 
         remaining = [uid for uid in team["member_ids"] if uid not in user_ids]
         self._teams.update(team_id, {"member_ids": remaining})
