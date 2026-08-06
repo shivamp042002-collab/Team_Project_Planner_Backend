@@ -1,6 +1,6 @@
 # Team Project Planner — Backend
 
-Django-based backend for managing users, teams, and project boards. Implements three HR-provided abstract interfaces (`UserBase`, `TeamBase`, `ProjectBoardBase`) as plain Python classes with JSON string I/O, backed by local file storage.
+Django-based backend for managing users, teams, and project boards. Implements the HR-provided abstract interfaces (`UserBase`, `TeamBase`, `ProjectBoardBase`) as plain Python classes with JSON string I/O, backed by local file storage.
 
 ## Contents
 
